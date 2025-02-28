@@ -19,7 +19,7 @@ pip install base-client
 ```
 
 ## Usage
-See -> [Examples](examples/example_client.py)
+See -> [Examples](examples/)
 
 ## Development
 ### Commands

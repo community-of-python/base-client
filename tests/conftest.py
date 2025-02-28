@@ -1,9 +1,10 @@
 import circuit_breaker_box
 import httpx
 import pytest
+import tenacity
 
 import base_client
-from examples.example_client import TestRedisConnection
+from examples.example_client_with_retry_circuit_breaker_redis import TestRedisConnection
 
 
 TEST_BASE_URL = "http://example.com/"
@@ -27,14 +28,15 @@ def test_client_with_circuit_breaker_redis() -> TestClient:
         reset_timeout_in_seconds=RESET_TIMEOUT_IN_SECONDS,
         max_failure_count=CLIENT_MAX_FAILURE_COUNT,
     )
-    retrier_with_circuit_breaker = circuit_breaker_box.RetrierCircuitBreaker[httpx.Response](
+    retrier_with_circuit_breaker = circuit_breaker_box.Retrier[httpx.Response](
         circuit_breaker=circuit_breaker,
-        max_retries=MAX_RETRIES,
-        exceptions_to_retry=(httpx.RequestError, base_client.errors.HttpStatusError),
+        stop_rule=tenacity.stop.stop_after_attempt(MAX_RETRIES),
+        retry_cause=tenacity.retry_if_exception_type((httpx.RequestError, base_client.errors.HttpStatusError)),
+        wait_strategy=tenacity.wait_none(),
     )
     return TestClient(
         client=httpx.AsyncClient(base_url=TEST_BASE_URL, timeout=httpx.Timeout(1)),
-        circuit_breaker=retrier_with_circuit_breaker,
+        retryer=retrier_with_circuit_breaker,
     )
 
 
@@ -45,14 +47,15 @@ def test_client_with_circuit_breaker_in_memory() -> TestClient:
         max_cache_size=MAX_CACHE_SIZE,
         max_failure_count=CLIENT_MAX_FAILURE_COUNT,
     )
-    retrier_with_circuit_breaker = circuit_breaker_box.RetrierCircuitBreaker[httpx.Response](
+    retrier_with_circuit_breaker = circuit_breaker_box.Retrier[httpx.Response](
         circuit_breaker=circuit_breaker,
-        max_retries=MAX_RETRIES,
-        exceptions_to_retry=(httpx.RequestError, base_client.errors.HttpStatusError),
+        stop_rule=tenacity.stop.stop_after_attempt(MAX_RETRIES),
+        retry_cause=tenacity.retry_if_exception_type((httpx.RequestError, base_client.errors.HttpStatusError)),
+        wait_strategy=tenacity.wait_none(),
     )
     return TestClient(
         client=httpx.AsyncClient(base_url=TEST_BASE_URL, timeout=httpx.Timeout(1)),
-        circuit_breaker=retrier_with_circuit_breaker,
+        retryer=retrier_with_circuit_breaker,
     )
 
 

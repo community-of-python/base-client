@@ -5,7 +5,7 @@ import httpx
 import pytest
 import respx
 
-from examples.example_client import TestRedisConnection
+from examples.example_client_with_retry_circuit_breaker_redis import TestRedisConnection
 from tests.conftest import CLIENT_MAX_FAILURE_COUNT, TEST_BASE_URL, TestClient
 
 

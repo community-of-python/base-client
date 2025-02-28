@@ -29,11 +29,11 @@ T = typing.TypeVar("T")
 @dataclasses.dataclass
 class BaseClient:
     client: httpx.AsyncClient
-    circuit_breaker: circuit_breaker_box.RetrierCircuitBreaker[httpx.Response] | None = None
+    retryer: circuit_breaker_box.Retrier[httpx.Response] | None = None
 
     async def send(self, *, request: httpx.Request) -> httpx.Response:
-        if self.circuit_breaker:
-            return await self.circuit_breaker.retry(self._process_request, request.url.host, request=request)
+        if self.retryer:
+            return await self.retryer.retry(self._process_request, request.url.host, request=request)
         return await self._process_request(request)
 
     def prepare_request(  # noqa: PLR0913
