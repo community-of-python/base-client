@@ -26,14 +26,14 @@ CallableT = typing.TypeVar("CallableT", bound=typing.Callable)  # type: ignore[t
 T = typing.TypeVar("T")
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True, slots=True)
 class BaseClient:
     client: httpx.AsyncClient
-    retryer: circuit_breaker_box.Retrier[httpx.Response] | None = None
+    retrier: circuit_breaker_box.Retrier[httpx.Response] | None = None
 
     async def send(self, *, request: httpx.Request) -> httpx.Response:
-        if self.retryer:
-            return await self.retryer.retry(self._process_request, request.url.host, request=request)
+        if self.retrier:
+            return await self.retrier.retry(self._process_request, request.url.host, request=request)
         return await self._process_request(request)
 
     def prepare_request(  # noqa: PLR0913

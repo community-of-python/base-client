@@ -63,7 +63,7 @@ async def main() -> None:
     )
     client = SomeSpecificClient(
         client=httpx.AsyncClient(base_url=SOME_HOST, timeout=httpx.Timeout(1)),
-        retryer=retrier_with_circuit_breaker,
+        retrier=retrier_with_circuit_breaker,
     )
     answer = await client.some_method(params={})
     logger.debug(answer)

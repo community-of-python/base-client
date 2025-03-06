@@ -6,7 +6,7 @@ import respx
 
 import base_client
 from base_client.response import response_to_model
-from tests.conftest import TEST_BASE_URL, TestClient
+from tests.conftest import TEST_BASE_URL, FakeClient
 
 
 @respx.mock
@@ -35,7 +35,7 @@ from tests.conftest import TEST_BASE_URL, TestClient
         ),
     ],
 )
-async def test_client_async(test_client: TestClient, expected_request: httpx.Request) -> None:
+async def test_client_async(test_client: FakeClient, expected_request: httpx.Request) -> None:
     mocked_route = respx.get(expected_request.url).mock(return_value=httpx.Response(status_code=httpx.codes.OK))
     response = await test_client.fetch_async(expected_request)
     assert mocked_route.called
@@ -43,7 +43,7 @@ async def test_client_async(test_client: TestClient, expected_request: httpx.Req
 
 
 @respx.mock
-async def test_client_request_404(test_client: TestClient) -> None:
+async def test_client_request_404(test_client: FakeClient) -> None:
     mocked_route = respx.get(TEST_BASE_URL).mock(return_value=httpx.Response(status_code=httpx.codes.NOT_FOUND))
     response = await test_client.fetch_async(test_client.prepare_request(method="GET", url=TEST_BASE_URL))
     assert mocked_route.called
@@ -75,7 +75,7 @@ async def test_client_request_404(test_client: TestClient) -> None:
         (httpx.TooManyRedirects("TooManyRedirects message"), httpx.TooManyRedirects),
     ],
 )
-async def test_retries(side_effect: type[Exception], expected_raise: type[Exception], test_client: TestClient) -> None:
+async def test_retries(side_effect: type[Exception], expected_raise: type[Exception], test_client: FakeClient) -> None:
     mocked_route = respx.get(TEST_BASE_URL).mock(side_effect=side_effect)
     with pytest.raises(expected_raise):
         await test_client.fetch_async(test_client.prepare_request(method="GET", url=TEST_BASE_URL))
@@ -98,7 +98,7 @@ async def test_retries(side_effect: type[Exception], expected_raise: type[Except
     ],
 )
 async def test_wont_retry(
-    side_effect: type[Exception], expected_raise: type[Exception], test_client: TestClient
+    side_effect: type[Exception], expected_raise: type[Exception], test_client: FakeClient
 ) -> None:
     mocked_route = respx.get(TEST_BASE_URL).mock(side_effect=side_effect)
 
@@ -115,7 +115,7 @@ async def test_wont_retry(
         (599, base_client.HttpServerError),
     ],
 )
-async def test_validate_response(status_code: int, side_effect: type[Exception], test_client: TestClient) -> None:
+async def test_validate_response(status_code: int, side_effect: type[Exception], test_client: FakeClient) -> None:
     response = httpx.Response(
         status_code=status_code,
         content=b"",
@@ -145,6 +145,6 @@ async def test_response_to_model() -> None:
         (httpx.URL(TEST_BASE_URL + "?1=2"), [("3", "4")], TEST_BASE_URL + "?1=2&3=4"),
     ],
 )
-async def test_prepare_request(url: str, params: dict[str, str], expected_url: str, test_client: TestClient) -> None:
+async def test_prepare_request(url: str, params: dict[str, str], expected_url: str, test_client: FakeClient) -> None:
     request = test_client.prepare_request(method="GET", url=url, params=params)
     assert request.url == expected_url
