@@ -4,13 +4,13 @@ import pytest
 import tenacity
 
 import base_client
-from examples.example_client_with_retry_circuit_breaker_redis import TestRedisConnection
+from examples.example_client_with_retry_circuit_breaker_redis import FakeRedisConnection
 
 
 TEST_BASE_URL = "http://example.com/"
 
 
-class TestClient(base_client.BaseClient):
+class FakeClient(base_client.BaseClient):
     async def fetch_async(self, request: httpx.Request) -> httpx.Response:
         return await self.send(request=request)
 
@@ -22,9 +22,9 @@ MAX_CACHE_SIZE = 256
 
 
 @pytest.fixture(name="test_client_with_circuit_breaker_redis")
-def test_client_with_circuit_breaker_redis() -> TestClient:
+def test_client_with_circuit_breaker_redis() -> FakeClient:
     circuit_breaker = circuit_breaker_box.CircuitBreakerRedis(
-        redis_connection=TestRedisConnection(),
+        redis_connection=FakeRedisConnection(),
         reset_timeout_in_seconds=RESET_TIMEOUT_IN_SECONDS,
         max_failure_count=CLIENT_MAX_FAILURE_COUNT,
     )
@@ -34,14 +34,14 @@ def test_client_with_circuit_breaker_redis() -> TestClient:
         retry_cause=tenacity.retry_if_exception_type((httpx.RequestError, base_client.errors.HttpStatusError)),
         wait_strategy=tenacity.wait_none(),
     )
-    return TestClient(
+    return FakeClient(
         client=httpx.AsyncClient(base_url=TEST_BASE_URL, timeout=httpx.Timeout(1)),
-        retryer=retrier_with_circuit_breaker,
+        retrier=retrier_with_circuit_breaker,
     )
 
 
 @pytest.fixture(name="test_client_with_circuit_breaker_in_memory")
-def test_client_with_circuit_breaker_in_memory() -> TestClient:
+def test_client_with_circuit_breaker_in_memory() -> FakeClient:
     circuit_breaker = circuit_breaker_box.CircuitBreakerInMemory(
         reset_timeout_in_seconds=RESET_TIMEOUT_IN_SECONDS,
         max_cache_size=MAX_CACHE_SIZE,
@@ -53,12 +53,12 @@ def test_client_with_circuit_breaker_in_memory() -> TestClient:
         retry_cause=tenacity.retry_if_exception_type((httpx.RequestError, base_client.errors.HttpStatusError)),
         wait_strategy=tenacity.wait_none(),
     )
-    return TestClient(
+    return FakeClient(
         client=httpx.AsyncClient(base_url=TEST_BASE_URL, timeout=httpx.Timeout(1)),
-        retryer=retrier_with_circuit_breaker,
+        retrier=retrier_with_circuit_breaker,
     )
 
 
 @pytest.fixture(name="test_client")
-def fixture_test_client() -> TestClient:
-    return TestClient(client=httpx.AsyncClient(base_url=TEST_BASE_URL, timeout=httpx.Timeout(1)))
+def fixture_test_client() -> FakeClient:
+    return FakeClient(client=httpx.AsyncClient(base_url=TEST_BASE_URL, timeout=httpx.Timeout(1)))

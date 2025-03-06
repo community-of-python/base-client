@@ -5,8 +5,8 @@ import httpx
 import pytest
 import respx
 
-from examples.example_client_with_retry_circuit_breaker_redis import TestRedisConnection
-from tests.conftest import CLIENT_MAX_FAILURE_COUNT, TEST_BASE_URL, TestClient
+from examples.example_client_with_retry_circuit_breaker_redis import FakeRedisConnection
+from tests.conftest import CLIENT_MAX_FAILURE_COUNT, TEST_BASE_URL, FakeClient
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ from tests.conftest import CLIENT_MAX_FAILURE_COUNT, TEST_BASE_URL, TestClient
 )
 @respx.mock
 async def test_circuit_breaker_in_memory(
-    test_client_with_circuit_breaker_in_memory: TestClient, side_effect: Exception
+    test_client_with_circuit_breaker_in_memory: FakeClient, side_effect: Exception
 ) -> None:
     mocked_route = respx.get(TEST_BASE_URL).mock(side_effect=side_effect)
 
@@ -64,13 +64,13 @@ async def test_circuit_breaker_redis(
     side_effect: type[Exception],
     expected_raise: type[Exception],
     errors_by_host_in_redis: int,
-    test_client_with_circuit_breaker_redis: TestClient,
+    test_client_with_circuit_breaker_redis: FakeClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     async def mock_return(*args: typing.Any, **kwargs: typing.Any) -> int:  # noqa: ARG001, ANN401
         return errors_by_host_in_redis
 
-    monkeypatch.setattr(TestRedisConnection, "get", mock_return)
+    monkeypatch.setattr(FakeRedisConnection, "get", mock_return)
 
     respx.get(TEST_BASE_URL).mock(side_effect=side_effect)
     with pytest.raises(expected_raise):

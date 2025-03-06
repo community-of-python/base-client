@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class TestRedisConnection(aioredis.Redis):  # type: ignore[type-arg]
+class FakeRedisConnection(aioredis.Redis):  # type: ignore[type-arg]
     async def incr(self, host: str | bytes, amount: int = 1) -> int:
         logger.debug("host: %s, amount: %d{amount}", host, amount)
         return amount
@@ -62,7 +62,7 @@ async def main() -> None:
     circuit_breaker = circuit_breaker_box.CircuitBreakerRedis(
         reset_timeout_in_seconds=RESET_TIMEOUT_IN_SECONDS,
         max_failure_count=CIRCUIT_BREAKER_MAX_FAILURE_COUNT,
-        redis_connection=TestRedisConnection(),
+        redis_connection=FakeRedisConnection(),
     )
     retrier_with_circuit_breaker = circuit_breaker_box.Retrier[httpx.Response](
         circuit_breaker=circuit_breaker,
@@ -72,7 +72,7 @@ async def main() -> None:
     )
     client = SomeSpecificClient(
         client=httpx.AsyncClient(base_url=SOME_HOST, timeout=httpx.Timeout(1)),
-        retryer=retrier_with_circuit_breaker,
+        retrier=retrier_with_circuit_breaker,
     )
     answer = await client.some_method(params={"foo": "bar"})
     logger.debug(answer.model_dump())
